@@ -1,6 +1,8 @@
 
 # Facial Recognition Using Singular Value Decomposition (SVD) with HPC Integration
 
+[![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=CuteLoop/faces)
+
 This repository contains the implementation of a scalable facial recognition system using **Singular Value Decomposition (SVD)** in **MATLAB** with **High-Performance Computing (HPC)** integration. The project demonstrates the use of parallel computation for dimensionality reduction, feature extraction, and classification of facial images from publicly available datasets.
 
 ---
