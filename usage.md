@@ -27,6 +27,15 @@ ssh-keygen -t ed25519 -C "your_email@example.com"
 eval "$(ssh-agent -s)"
 ssh-add ~/.ssh/id_ed25519
 cat ~/.ssh/id_ed25519.pub
+```
+Copy this output. this is your ssh public key. You will put this in your github profile
+
+> settings> Access > SSH and GPG keys > New SSH key or Add SSH key.
+
+Now try to login to github trough the HPC. clone your repository.
+and verify yourself can push.
+
+```bash
 ssh -T git@github.com
 git clone git@github.com:username/repository.git
 cd repository
