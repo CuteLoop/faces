@@ -11,9 +11,9 @@ This repository contains the implementation of a scalable facial recognition sys
 1. [Introduction](#introduction)
 2. [Features](#features)
 3. [Requirements](#requirements)
-4. [Installation and Setup](#installation-and-setup)
-5. [Usage](#usage)
-6. [Roadmap](./Roadmap.md)
+4. [Installation and Setup](./usage.md)
+5. [Usage](./usage.md) (./usage.md)
+6. [Roadmap](./Roadmap.md) and [Roadmap2](./Roadma2p.md)
 7. [Acknowledgments](#acknowledgments)
 8. [License](#license)
 
@@ -39,7 +39,7 @@ Facial recognition systems are vital in applications such as security, authentic
 ---
 
 ## Requirements
-- **MATLAB** (R2022a or newer)
+- **MATLAB** (R2023b or newer)
   - Parallel Computing Toolbox
 - Access to an HPC environment (e.g., SLURM cluster)
 - Public facial datasets:
