@@ -12,7 +12,7 @@ This repository contains the implementation of a scalable facial recognition sys
 2. [Features](#features)
 3. [Requirements](#requirements)
 4. [Installation and Setup](./usage.md)
-5. [Usage](./usage.md) (./usage.md)
+5. [Usage](./usage.md)
 6. [Roadmap](./Roadmap.md) and [Roadmap2](./Roadma2p.md)
 7. [Acknowledgments](#acknowledgments)
 8. [License](#license)
