@@ -15,7 +15,7 @@
 % Image preprocessing parameters
 targetSize = [128,128]; % Resize images to 128x128
 k = 40; % Number of features (eigenfaces) to consider
-location = fullfile('lfw'); % Image dataset location
+location = fullfile('..','lfw'); % Image dataset location
 
 % Global Plot Settings
 set(groot, 'DefaultAxesFontSize', 10);

@@ -8,7 +8,7 @@
 % Image preprocessing parameters
 targetSize = [128,128]; % Resize images to 128x128
 k = 40; % Number of features (eigenfaces) to consider
-location = fullfile('lfw'); % Image dataset location
+location = fullfile('..','lfw'); % Image dataset location
 
 % Global Plot Settings
 set(groot, 'DefaultAxesFontSize', 10);
@@ -74,19 +74,26 @@ xlabel('x1'); ylabel('x2'); zlabel('x3');
 grid on;
 saveas(gcf, 'feature_space.png');
 
-% ROC metrics with legend moved under the diagonal
+
+% ROC metrics with reduced legend entries
 [YPred, Score] = resubPredict(Mdl);
-numClassesToShow = 10; % Limit classes
+numClassesToShow = 10; % Limit to 10 classes for readability
 randomIdx = randperm(numel(persons), numClassesToShow);
 selectedClasses = persons(randomIdx);
 filteredScores = Score(:, randomIdx);
+
 rm = rocmetrics(Y, filteredScores, selectedClasses);
 
 figure('Position', [100, 100, 1200, 600]);
-plot(rm, 'ShowLegend', true, 'LineWidth', 1.5);
-legend('Location', 'southeast'); % Legend under the diagonal
+plot(rm, 'LineWidth', 1.5); % Plot ROC curve
+
+% Customize legend placement
+lgd = legend('show');
+set(lgd, 'Location', 'southeastoutside'); % Move legend to the lower-right area
 title('ROC Curve (Subset of Classes)');
 saveas(gcf, 'roc_metrics.png');
+
+
 
 % Simplified confusion matrix
 figure('Position', [100, 100, 1200, 600]);
