@@ -106,13 +106,21 @@ legend('show'); % Limited legend for clarity
 saveas(gcf, 'roc_metrics.png'); % Save ROC metrics plot
 
 % Improved confusion matrix visualization
-figure;
-cm = confusionchart(Y, YPred, 'Title', 'Confusion Matrix', ...
-                    'FontSize', 8, 'RowSummary', 'row-normalized', ...
+
+% Improved confusion matrix visualization
+disp('Displaying Confusion Matrix...');
+figure('Position', [100, 100, 1000, 800]); % Larger figure size
+cm = confusionchart(Y, YPred, ...
+                    'Title', 'Confusion Matrix', ...
+                    'FontSize', 8, ...
+                    'RowSummary', 'row-normalized', ...
                     'ColumnSummary', 'column-normalized');
-xtickangle(45);
-ytickangle(45);
-saveas(gcf, 'confusion_matrix.png'); % Save confusion matrix plot
+
+% Save the confusion matrix
+saveas(gcf, 'confusion_matrix.png');
+disp('Confusion Matrix saved successfully.');
+
+
 
 %% Step 5: Save model
 save('model.mat', 'Mdl', 'persons', 'U', 'targetSize');
