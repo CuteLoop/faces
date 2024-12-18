@@ -1,83 +1,117 @@
 %----------------------------------------------------------------
 % File:     main_fitcecoc.m
+% Purpose:  Load dataset, preprocess images, compute SVD (eigenfaces),
+%           extract features, train a multi-class SVM model in parallel,
+%           and save the model. This code integrates HPC through parallel
+%           computations where possible.
 %----------------------------------------------------------------
-% Author:   Marek Rychlik
-% Date:     Fri Nov 22 20:02:05 2024
+% Author:   Marek Rychlik (Revised)
+% Date:     2024-12-17
 %----------------------------------------------------------------
 
 % Image preprocessing parameters
 targetSize = [128,128]; % Resize images to 128x128
-k = 40; % Number of features (eigenfaces) to consider
-location = fullfile('..','lfw'); % Image dataset location
+k = 60; % Number of eigenfaces (features) to use. Increased to capture more detail.
+location = fullfile('..','lfw'); % Adjust path as needed
+
+% Initialize a parallel pool if not already active for HPC usage
+if isempty(gcp('nocreate'))
+    parpool('local');
+end
 
 % Global Plot Settings
 set(groot, 'DefaultAxesFontSize', 10);
 set(groot, 'DefaultLineLineWidth', 1.5);
 set(groot, 'DefaultFigurePosition', [100, 100, 1200, 800]);
 
-%% Step 1: Load and preprocess images
-disp('Creating image datastore...');
+%% Step 1: Load and Preprocess Images in Parallel
+disp('Creating image datastore and preprocessing images...');
+
 imds0 = imageDatastore(location, ...
                        'IncludeSubfolders', true, ...
                        'LabelSource', 'foldernames', ...
                        'ReadFcn', @(filename) imresize(im2gray(imread(filename)), targetSize));
 
-% Subset images: persons with 10-40 images
+% Filter persons with at least 10 images (to ensure adequate training samples)
 tbl = countEachLabel(imds0);
-mask = tbl{:,2} >= 10 & tbl{:,2} <= 40;
+mask = tbl{:,2} >= 10;
 persons = unique(tbl{mask,1});
 
-% Filter dataset
-[lia, locb] = ismember(imds0.Labels, persons);
+[lia, ~] = ismember(imds0.Labels, persons);
 imds = subset(imds0, lia);
 
-% Display and save selected images
+% Display and save selected images (for EDA)
 figure('Position', [100, 100, 1200, 600]);
 montage(imds);
 title('Selected Dataset Images');
 saveas(gcf, 'dataset_images.png'); % Save montage
 
-%% Step 2: Data normalization and PCA
-disp('Performing PCA...');
-A = readall(imds);
-B = cat(3, A{:}); 
-B = reshape(B, prod(targetSize), []);
-B = single(B) ./ 256;
+%% Step 2: Parallelized Reading and Normalization
+% Convert all images into a single matrix B.
+% Use parallelization if needed for large sets.
 
-[B, ~, ~] = normalize(B);
+disp('Reading and vectorizing images in parallel...');
+filePaths = imds.Files;
+numImages = numel(filePaths);
+D = prod(targetSize);
+
+% Preallocate for efficiency
+B = zeros(D, numImages, 'single');
+
+% Use a parfor loop to read images in parallel
+parfor i = 1:numImages
+    I = imread(filePaths{i});
+    I = imresize(im2gray(I), targetSize);
+    B(:, i) = single(I(:)) ./ 255; % Normalize pixel values to [0,1]
+end
+
+% Normalize data (center and scale)
+[B, meanB, stdB] = normalize(B, 2);
+
+%% Step 3: Compute SVD for Dimensionality Reduction
+disp('Performing SVD to extract eigenfaces...');
+
+% SVD decomposition. Using 'econ' to save memory
 [U, S, V] = svd(B, 'econ');
 
-% Display and save top 16 eigenfaces
+% Display and save top eigenfaces
 Eigenfaces = arrayfun(@(j) mat2gray(reshape(U(:,j), targetSize)), 1:16, 'uni', false);
 figure('Position', [100, 100, 1200, 600]);
-montage(Eigenfaces, 'Size', [4, 4], 'BorderSize', [5, 5], 'BackgroundColor', 'white');
+montage(Eigenfaces, 'Size', [4,4], 'BorderSize', [5,5], 'BackgroundColor', 'white');
 title('Top 16 Eigenfaces');
 saveas(gcf, 'eigenfaces.png');
 
-%% Step 3: Train multi-class SVM
-disp('Training SVM classifier...');
-W = S * V';
-W = W(1:k, :);
-U = U(:, 1:k);
-X = W';
+%% Step 4: Feature Extraction
+% Project all images onto the first k eigenfaces
+disp('Extracting features using top k eigenfaces...');
+U_k = U(:, 1:k);
+W = S(1:k,1:k) * V(:,1:k)'; % W are the weights (features)
+X = W'; % Each row of X is a feature vector for one image
 Y = categorical(imds.Labels, persons);
 
+%% Step 5: Train Multi-Class SVM with Parallelization
+disp('Training multi-class SVM (fitcecoc) using parallel processing...');
 options = statset('UseParallel', true);
-Mdl = fitcecoc(X, Y, 'Verbose', 2, 'Learners', 'svm', 'Options', options);
+Mdl = fitcecoc(X, Y, ...
+    'Verbose', 2, ...
+    'Learners', 'svm', ...
+    'Options', options);
 
-%% Step 4: Visualize and save results
-% Scatter plot for top features
+%% Step 6: Visualization of Feature Space and Evaluation Metrics
+% Visualize top features
+disp('Visualizing feature space...');
 figure('Position', [100, 100, 1200, 600]);
-scatter3(X(:,1), X(:,2), X(:,3), 50, uint8(Y), 'filled', 'MarkerFaceAlpha', 0.6);
-title('Feature Space: Top 3 Features');
-xlabel('x1'); ylabel('x2'); zlabel('x3');
+scatter3(X(:,1), X(:,2), X(:,3), 50, double(Y), 'filled', 'MarkerFaceAlpha', 0.6);
+title('Feature Space: Top 3 Eigenface Features');
+xlabel('Feature 1'); ylabel('Feature 2'); zlabel('Feature 3');
 grid on;
 saveas(gcf, 'feature_space.png');
 
-
-% ROC metrics with reduced legend entries
+disp('Computing predictions and ROC metrics...');
 [YPred, Score] = resubPredict(Mdl);
-numClassesToShow = 10; % Limit to 10 classes for readability
+
+% Limit number of classes for visualization (e.g., 10)
+numClassesToShow = min(10, numel(persons));
 randomIdx = randperm(numel(persons), numClassesToShow);
 selectedClasses = persons(randomIdx);
 filteredScores = Score(:, randomIdx);
@@ -86,24 +120,23 @@ rm = rocmetrics(Y, filteredScores, selectedClasses);
 
 figure('Position', [100, 100, 1200, 600]);
 plot(rm, 'LineWidth', 1.5); % Plot ROC curve
-
-% Customize legend placement
-lgd = legend('show');
-set(lgd, 'Location', 'southeastoutside'); % Move legend to the lower-right area
+legend('Location', 'southeastoutside');
 title('ROC Curve (Subset of Classes)');
 saveas(gcf, 'roc_metrics.png');
 
-
-
-% Simplified confusion matrix
-figure('Position', [100, 100, 1200, 600]);
-subsetClasses = selectedClasses(1:5); % Only compare 5 classes
+% Confusion Matrix for a subset of classes
+subsetClasses = selectedClasses(1:min(5,numClassesToShow));
 subsetMask = ismember(Y, subsetClasses);
+figure('Position', [100, 100, 1200, 600]);
 confusionchart(Y(subsetMask), YPred(subsetMask), ...
-    'Title', 'Confusion Matrix (Subset of 5 Classes)', ...
+    'Title', 'Confusion Matrix (Subset)', ...
     'FontSize', 10, 'RowSummary', 'row-normalized', 'ColumnSummary', 'column-normalized');
 saveas(gcf, 'confusion_matrix.png');
 
-%% Step 5: Save model
-save('model.mat', 'Mdl', 'persons', 'U', 'targetSize');
+%% Step 7: Save the Model
+% The required model file for autograding
+% Save the model, persons, U (eigenfaces), and targetSize
+% If needed, also save meanB and stdB to replicate the same normalization in "recognize_faces"
+disp('Saving model and parameters...');
+save('model.mat', 'Mdl', 'persons', 'U_k', 'targetSize', 'meanB', 'stdB');
 disp('Model and outputs saved successfully.');
