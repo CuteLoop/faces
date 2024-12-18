@@ -61,7 +61,13 @@ toc;
 % Display and save top 16 eigenfaces
 Eigenfaces = arrayfun(@(j) reshape(U(:,j), targetSize), 1:16, 'uni', false);
 figure;
-montage(Eigenfaces, 'Size', [4,4], 'BorderSize', [5,5], 'BackgroundColor', 'white');
+
+
+
+% Get an montage of eigenfaces
+Eigenfaces = arrayfun(@(j)reshape((U(:,j)-min(U(:,j)))./(max(U(:,j))-min(U(:,j))),targetSize), ...
+    1:size(U,2),'uni',false);
+montage(Eigenfaces(1:16));
 title('Top 16 Eigenfaces');
 saveas(gcf, 'eigenfaces.png'); % Save top 16 eigenfaces
 
