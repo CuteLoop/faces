@@ -17,6 +17,11 @@ targetSize = [128,128]; % Resize images to 128x128
 k = 40; % Number of features (eigenfaces) to consider
 location = fullfile('lfw'); % Image dataset location
 
+% Global Plot Settings
+set(groot, 'DefaultAxesFontSize', 10);
+set(groot, 'DefaultLineLineWidth', 1.5);
+set(groot, 'DefaultFigurePosition', [100, 100, 800, 600]);
+
 %% Step 1: Load and preprocess images
 disp('Creating image datastore...');
 imds0 = imageDatastore(location, ...
@@ -35,8 +40,7 @@ persons = unique(tbl{mask,1});
 imds = subset(imds0, lia);
 
 % Display and save selected images
-t = tiledlayout('flow');
-nexttile(t);
+figure;
 montage(imds);
 title('Selected Dataset Images');
 saveas(gcf, 'dataset_images.png'); % Save montage of dataset images
@@ -57,7 +61,7 @@ toc;
 % Display and save top 16 eigenfaces
 Eigenfaces = arrayfun(@(j) reshape(U(:,j), targetSize), 1:16, 'uni', false);
 figure;
-montage(Eigenfaces);
+montage(Eigenfaces, 'Size', [4,4], 'BorderSize', [5,5], 'BackgroundColor', 'white');
 title('Top 16 Eigenfaces');
 saveas(gcf, 'eigenfaces.png'); % Save top 16 eigenfaces
 
@@ -75,24 +79,33 @@ Mdl = fitcecoc(X, Y, 'Verbose', 2, 'Learners', 'svm', 'Options', options);
 %% Step 4: Visualize and save results
 % Scatter plot for top features
 figure;
-scatter3(X(:,1), X(:,2), X(:,3), 50, uint8(Y), 'filled');
+scatter3(X(:,1), X(:,2), X(:,3), 50, uint8(Y), 'filled', 'MarkerFaceAlpha', 0.6);
 title('Feature Space: Top 3 Features');
 xlabel('x1'); ylabel('x2'); zlabel('x3');
+grid on;
 saveas(gcf, 'feature_space.png'); % Save scatter plot of feature space
 
-% ROC metrics
+% ROC metrics with reduced legend entries
 [YPred, Score] = resubPredict(Mdl);
-rm = rocmetrics(Y, Score, persons);
+numClassesToShow = 10; % Number of classes to display in the legend
+randomIdx = randperm(numel(persons), numClassesToShow);
+selectedClasses = persons(randomIdx);
+filteredScores = Score(:, randomIdx);
+rm = rocmetrics(Y, filteredScores, selectedClasses);
 
 figure;
 plot(rm);
-title('ROC Metrics');
+title('ROC Curve (Subset of Classes)');
+legend('show'); % Limited legend for clarity
 saveas(gcf, 'roc_metrics.png'); % Save ROC metrics plot
 
-% Confusion matrix
+% Improved confusion matrix visualization
 figure;
-confusionchart(Y, YPred);
-title('Confusion Matrix');
+cm = confusionchart(Y, YPred, 'Title', 'Confusion Matrix', ...
+                    'FontSize', 8, 'RowSummary', 'row-normalized', ...
+                    'ColumnSummary', 'column-normalized');
+xtickangle(45);
+ytickangle(45);
 saveas(gcf, 'confusion_matrix.png'); % Save confusion matrix plot
 
 %% Step 5: Save model

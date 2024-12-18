@@ -19,36 +19,29 @@ add(rpt, TableOfContents);
 %% Section 1: Project Overview
 sec1 = Section('Project Overview');
 
-para1 = Paragraph(['This project demonstrates a facial recognition pipeline implemented in MATLAB. ', ...
-                   'The main goal is to classify images of different individuals using ', ...
-                   'Principal Component Analysis (PCA) for feature extraction and ', ...
-                   'Support Vector Machines (SVM) for classification.']);
-para1.Style = {Bold};
+para1 = Paragraph(['This project implements a facial recognition system using MATLAB. ', ...
+                   'The main objectives are to preprocess image data, extract features using ', ...
+                   'Principal Component Analysis (PCA), and classify faces using a Support Vector Machine (SVM).']);
 add(sec1, para1);
 
-para2 = Paragraph(['PCA reduces the dimensionality of image data by finding the most significant features ', ...
-                   '(eigenfaces) that represent the dataset. The reduced features are then used to train ', ...
-                   'a multi-class SVM model to recognize faces.']);
+para2 = Paragraph(['The key steps include:']);
+list1 = UnorderedList({'Data Preparation: Resize, grayscale conversion, and flatten images.', ...
+                       'Feature Extraction: Apply PCA to extract dominant facial features (eigenfaces).', ...
+                       'Classification: Train a multi-class SVM using the extracted features.', ...
+                       'Evaluation: Measure performance using Confusion Matrix and ROC metrics.'});
 add(sec1, para2);
-
-list1 = UnorderedList({'Data Preparation: Resizing, Grayscale Conversion, and Flattening Images.', ...
-                       'Feature Extraction: PCA using Singular Value Decomposition (SVD).', ...
-                       'Classification: Multi-class SVM using ECOC.', ...
-                       'Evaluation: Confusion Matrix and ROC Metrics.'});
 add(sec1, list1);
-
 add(rpt, sec1);
 
-%% Section 2: Data Processing and PCA
-sec2 = Section('Data Processing and PCA');
+%% Section 2: Data Preprocessing and PCA
+sec2 = Section('Data Preprocessing and PCA');
 
-para3 = Paragraph(['The image dataset is first preprocessed by resizing all images to ', ...
-                   'a fixed size of 128x128 pixels and converting them to grayscale. Each image is flattened ', ...
-                   'into a vector, resulting in a large dataset matrix.']);
+para3 = Paragraph(['The image dataset consists of grayscale images resized to ', ...
+                   '128x128 pixels. Each image is flattened into a vector, forming a large matrix of image data.']);
 add(sec2, para3);
 
-para4 = Paragraph(['Principal Component Analysis (PCA) is applied to reduce the dimensionality of this matrix. ', ...
-                   'PCA identifies the most significant directions (eigenfaces) in the data, capturing key features ', ...
+para4 = Paragraph(['PCA is applied to reduce the dimensionality of the data, extracting the most significant ', ...
+                   'components known as eigenfaces. These eigenfaces capture the key facial features necessary ', ...
                    'for distinguishing between individuals.']);
 add(sec2, para4);
 
@@ -60,69 +53,73 @@ caption1 = Paragraph('Figure 1: Top 16 Eigenfaces extracted using PCA.');
 add(sec2, img1);
 add(sec2, caption1);
 
-% Add explanation of SVD
-para5 = Paragraph(['Singular Value Decomposition (SVD) is the method used to compute PCA. The image data matrix ', ...
-                   'is decomposed into three components: ', ...
-                   'U (eigenfaces), S (singular values), and V (coefficients). The top eigenfaces are selected ', ...
-                   'to form a reduced feature space.']);
+para5 = Paragraph(['PCA uses Singular Value Decomposition (SVD) to decompose the data matrix into three components: ', ...
+                   'U (eigenfaces), S (singular values), and V (coefficients). The top K eigenfaces are selected to form ', ...
+                   'a reduced feature space for classification.']);
 add(sec2, para5);
 
 add(rpt, sec2);
 
-%% Section 3: Model Training and Results
+%% Section 3: Model Training and Evaluation
 sec3 = Section('Model Training and Results');
 
-para6 = Paragraph(['Once the PCA-transformed features are extracted, a Support Vector Machine (SVM) classifier ', ...
-                   'is trained using the top features. The SVM model utilizes a multi-class ECOC (Error-Correcting Output Codes) ', ...
-                   'approach to handle multiple classes efficiently.']);
+para6 = Paragraph(['The extracted features (eigenfaces) are used to train a Support Vector Machine (SVM) classifier. ', ...
+                   'A multi-class SVM with Error-Correcting Output Codes (ECOC) is used to handle multiple classes.']);
 add(sec3, para6);
 
-% Add training explanation
-para7 = Paragraph(['Training is performed on the reduced feature space, and model performance is evaluated using ', ...
-                   'two key metrics: the confusion matrix and ROC (Receiver Operating Characteristic) metrics.']);
+% Add scatter plot of feature space
+para7 = Paragraph('The scatter plot below visualizes the top 3 PCA features used for classification:');
 add(sec3, para7);
-
-% Add confusion matrix image
-img2 = Image('confusion_matrix.png');
+img2 = Image('feature_space.png');
 img2.Width = '4in';
 img2.Height = '3in';
-caption2 = Paragraph('Figure 2: Confusion Matrix showing model predictions.');
+caption2 = Paragraph('Figure 2: Scatter plot of the top 3 PCA features.');
 add(sec3, img2);
 add(sec3, caption2);
 
-% Add ROC curve explanation
-para8 = Paragraph(['The ROC curve illustrates the trade-off between the true positive rate and false positive rate ', ...
-                   'for the model predictions. It helps assess the classifier''s ability to distinguish between classes.']);
+% Add confusion matrix
+para8 = Paragraph(['The confusion matrix provides an evaluation of the model''s performance, showing the relationship ', ...
+                   'between predicted and true labels:']);
 add(sec3, para8);
-
-% Add ROC metrics image
-img3 = Image('roc_metrics.png');
+img3 = Image('confusion_matrix.png');
 img3.Width = '4in';
 img3.Height = '3in';
-caption3 = Paragraph('Figure 3: ROC Curve for evaluating model performance.');
+caption3 = Paragraph('Figure 3: Confusion Matrix for model predictions.');
 add(sec3, img3);
 add(sec3, caption3);
 
-% Summary of results
-para9 = Paragraph(['Overall, the trained model achieves accurate classification by leveraging PCA for dimensionality ', ...
-                   'reduction and SVM for classification. The confusion matrix and ROC metrics demonstrate the model''s performance.']);
+% Add ROC curve explanation
+para9 = Paragraph(['The ROC curve illustrates the trade-off between the True Positive Rate (TPR) and the False Positive Rate (FPR). ', ...
+                   'It is a useful measure of the classifier''s ability to distinguish between classes.']);
 add(sec3, para9);
+img4 = Image('roc_metrics.png');
+img4.Width = '4in';
+img4.Height = '3in';
+caption4 = Paragraph('Figure 4: ROC Curve for evaluating model performance.');
+add(sec3, img4);
+add(sec3, caption4);
+
+% Summary paragraph
+para10 = Paragraph(['The trained SVM model successfully classifies images using the PCA-extracted features. ', ...
+                    'The confusion matrix and ROC metrics confirm the model''s accuracy and ability to generalize across classes.']);
+add(sec3, para10);
 
 add(rpt, sec3);
 
-%% Section 4: Conclusion
-sec4 = Section('Conclusion');
-para10 = Paragraph(['This project successfully demonstrates a facial recognition system using PCA and SVM. ', ...
-                    'The steps include image preprocessing, dimensionality reduction via PCA, and classification using SVM. ', ...
-                    'The model provides a robust solution for recognizing faces from a given dataset.']);
-add(sec4, para10);
+%% Section 4: Conclusion and Future Work
+sec4 = Section('Conclusion and Future Work');
 
-para11 = Paragraph(['Future improvements could include using deep learning approaches such as Convolutional Neural Networks (CNNs) ', ...
-                    'to further enhance recognition accuracy and generalizability.']);
+para11 = Paragraph(['In this project, a facial recognition pipeline was developed using PCA and SVM. ', ...
+                    'PCA effectively reduced the dimensionality of the image data, while SVM provided robust classification.']);
 add(sec4, para11);
+
+para12 = Paragraph(['Future improvements could involve incorporating deep learning techniques, such as Convolutional Neural Networks (CNNs), ', ...
+                    'to further enhance performance and scalability for larger datasets.']);
+add(sec4, para12);
 
 add(rpt, sec4);
 
-%% Close and generate report
+%% Close and Generate Report
 close(rpt);
+disp('Report generation completed. Opening the report...');
 rptview(rpt);
