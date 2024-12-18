@@ -10,9 +10,9 @@
 %----------------------------------------------------------------
 
 % Image preprocessing parameters
-targetSize = [128,128]; % Resize images to 128x128
+targetSize = [128, 128]; % Resize images to 128x128
 k = 60; % Number of eigenfaces (features) to use. Increased to capture more detail.
-location = fullfile('..','lfw'); % Adjust path as needed
+location = fullfile('..', 'lfw'); % Adjust path as needed
 
 % Initialize a parallel pool if not already active for HPC usage
 if isempty(gcp('nocreate'))
@@ -34,8 +34,8 @@ imds0 = imageDatastore(location, ...
 
 % Filter persons with at least 10 images (to ensure adequate training samples)
 tbl = countEachLabel(imds0);
-mask = tbl{:,2} >= 10;
-persons = unique(tbl{mask,1});
+mask = tbl{:, 2} >= 10;
+persons = unique(tbl{mask, 1});
 
 [lia, ~] = ismember(imds0.Labels, persons);
 imds = subset(imds0, lia);
@@ -46,9 +46,9 @@ montage(imds);
 title('Selected Dataset Images');
 saveas(gcf, 'dataset_images.png'); % Save montage
 
-%% Step 2: Parallelized Reading and Normalization
+%% Step 2: Parallelized Reading and Scaling
 % Convert all images into a single matrix B.
-% Use parallelization if needed for large sets.
+% Scale pixel values to [0,1].
 
 disp('Reading and vectorizing images in parallel...');
 filePaths = imds.Files;
@@ -62,11 +62,10 @@ B = zeros(D, numImages, 'single');
 parfor i = 1:numImages
     I = imread(filePaths{i});
     I = imresize(im2gray(I), targetSize);
-    B(:, i) = single(I(:)) ./ 255; % Normalize pixel values to [0,1]
+    B(:, i) = single(I(:)) / 255; % Normalize pixel values to [0,1]
 end
 
-% Normalize data (center and scale)
-[B, meanB, stdB] = normalize(B, 2);
+% No normalization step here (removed [B, meanB, stdB] = normalize(B, 2);)
 
 %% Step 3: Compute SVD for Dimensionality Reduction
 disp('Performing SVD to extract eigenfaces...');
@@ -75,9 +74,9 @@ disp('Performing SVD to extract eigenfaces...');
 [U, S, V] = svd(B, 'econ');
 
 % Display and save top eigenfaces
-Eigenfaces = arrayfun(@(j) mat2gray(reshape(U(:,j), targetSize)), 1:16, 'uni', false);
+Eigenfaces = arrayfun(@(j) mat2gray(reshape(U(:, j), targetSize)), 1:16, 'UniformOutput', false);
 figure('Position', [100, 100, 1200, 600]);
-montage(Eigenfaces, 'Size', [4,4], 'BorderSize', [5,5], 'BackgroundColor', 'white');
+montage(Eigenfaces, 'Size', [4, 4], 'BorderSize', [5, 5], 'BackgroundColor', 'white');
 title('Top 16 Eigenfaces');
 saveas(gcf, 'eigenfaces.png');
 
@@ -85,7 +84,7 @@ saveas(gcf, 'eigenfaces.png');
 % Project all images onto the first k eigenfaces
 disp('Extracting features using top k eigenfaces...');
 U_k = U(:, 1:k);
-W = S(1:k,1:k) * V(:,1:k)'; % W are the weights (features)
+W = S(1:k, 1:k) * V(:, 1:k)'; % W are the weights (features)
 X = W'; % Each row of X is a feature vector for one image
 Y = categorical(imds.Labels, persons);
 
@@ -101,7 +100,7 @@ Mdl = fitcecoc(X, Y, ...
 % Visualize top features
 disp('Visualizing feature space...');
 figure('Position', [100, 100, 1200, 600]);
-scatter3(X(:,1), X(:,2), X(:,3), 50, double(Y), 'filled', 'MarkerFaceAlpha', 0.6);
+scatter3(X(:, 1), X(:, 2), X(:, 3), 50, double(Y), 'filled', 'MarkerFaceAlpha', 0.6);
 title('Feature Space: Top 3 Eigenface Features');
 xlabel('Feature 1'); ylabel('Feature 2'); zlabel('Feature 3');
 grid on;
@@ -125,7 +124,7 @@ title('ROC Curve (Subset of Classes)');
 saveas(gcf, 'roc_metrics.png');
 
 % Confusion Matrix for a subset of classes
-subsetClasses = selectedClasses(1:min(5,numClassesToShow));
+subsetClasses = selectedClasses(1:min(5, numClassesToShow));
 subsetMask = ismember(Y, subsetClasses);
 figure('Position', [100, 100, 1200, 600]);
 confusionchart(Y(subsetMask), YPred(subsetMask), ...
@@ -134,9 +133,7 @@ confusionchart(Y(subsetMask), YPred(subsetMask), ...
 saveas(gcf, 'confusion_matrix.png');
 
 %% Step 7: Save the Model
-% The required model file for autograding
-% Save the model, persons, U (eigenfaces), and targetSize
-% If needed, also save meanB and stdB to replicate the same normalization in "recognize_faces"
+% Save the model in the specified format
 disp('Saving model and parameters...');
-save('model.mat', 'Mdl', 'persons', 'U_k', 'targetSize', 'meanB', 'stdB');
+save('model.mat', 'Mdl', 'persons', 'U_k', 'targetSize'); % Removed meanB and stdB
 disp('Model and outputs saved successfully.');
