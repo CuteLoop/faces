@@ -1,0 +1,225 @@
+%----------------------------------------------------------------
+% File:     yreport.m
+% Purpose:  Load dataset, preprocess images, compute SVD (eigenfaces),
+%           extract features, train a multi-class SVM model in parallel,
+%           generate necessary figures for the report, and save the model.
+%----------------------------------------------------------------
+% Author:   Joel Maldonado (Original)
+%           Marek Rychlik (Revised)
+% Date:     2024-12-17
+%----------------------------------------------------------------
+
+% Image preprocessing parameters
+targetSize = [128, 128]; % Resize images to 128x128
+k = 60; % Number of eigenfaces (features) to use. Increased to capture more detail.
+location = fullfile('..', 'lfw'); % Adjust path as needed
+
+% Initialize a parallel pool if not already active for HPC usage
+if isempty(gcp('nocreate'))
+    parpool('local');
+end
+
+% Global Plot Settings
+set(groot, 'DefaultAxesFontSize', 10);
+set(groot, 'DefaultLineLineWidth', 1.5);
+set(groot, 'DefaultFigurePosition', [100, 100, 1200, 800]);
+
+%% Step 1: Load and Preprocess Images in Parallel
+disp('Creating image datastore and preprocessing images...');
+
+imds0 = imageDatastore(location, ...
+                       'IncludeSubfolders', true, ...
+                       'LabelSource', 'foldernames', ...
+                       'ReadFcn', @(filename) imresize(im2gray(imread(filename)), targetSize));
+
+% Filter persons with at least 10 images (to ensure adequate training samples)
+tbl = countEachLabel(imds0);
+mask = tbl{:, 2} >= 10;
+persons = unique(tbl{mask, 1});
+
+[lia, ~] = ismember(imds0.Labels, persons);
+imds = subset(imds0, lia);
+
+% Display and save selected images (for EDA)
+figure('Position', [100, 100, 1200, 600]);
+montage(imds);
+title('Selected Dataset Images');
+saveas(gcf, 'dataset_images.png'); % Save montage
+close all;
+
+%% Step 1a: Generate Histogram of Image Counts per Person
+disp('Generating histogram of image counts per person...');
+
+% Count the number of images per person
+counts = countEachLabel(imds);
+
+% Create the histogram
+figure('Position', [100, 100, 800, 600]);
+histogram(counts.Count, 'BinWidth', 1, 'FaceColor', [0.2 0.2 0.5]);
+xlabel('Number of Images per Person');
+ylabel('Number of People');
+title('Histogram of Image Counts per Person');
+xlim([0, 60]); % Set x-axis limits as per requirement
+grid on;
+saveas(gcf, 'image_counts_histogram.png'); % Save histogram
+close all;
+
+%% Step 1b: Generate Image Collage of Angelina Jolie
+disp('Generating image collage for Angelina Jolie...');
+
+% Define the label for Angelina Jolie
+targetPerson = 'Angelina_Jolie'; % Adjust this based on your dataset's naming convention
+
+% Filter images of Angelina Jolie
+angelaIdx = find(imds0.Labels == targetPerson);
+if isempty(angelaIdx)
+    warning('No images found for %s.', targetPerson);
+else
+    % Subset datastore for Angelina Jolie
+    angelaImds = subset(imds0, angelaIdx);
+    
+    % Create a montage
+    figure('Position', [100, 100, 1200, 800]);
+    montage(angelaImds, 'Size', [4, ceil(length(angelaIdx)/4)]);
+    title(sprintf('Image Collage of %s', strrep(targetPerson, '_', ' ')));
+    saveas(gcf, 'angelina_jolie_collage.png'); % Save collage
+    close all;
+end
+
+%% Step 2: Parallelized Reading and Scaling
+% Convert all images into a single matrix B.
+% Scale pixel values to [0,1].
+
+disp('Reading and vectorizing images in parallel...');
+filePaths = imds.Files;
+numImages = numel(filePaths);
+D = prod(targetSize);
+
+% Preallocate for efficiency
+B = zeros(D, numImages, 'single');
+
+% Use a parfor loop to read images in parallel
+parfor i = 1:numImages
+    I = imread(filePaths{i});
+    I = imresize(im2gray(I), targetSize);
+    B(:, i) = single(I(:)) / 255; % Normalize pixel values to [0,1]
+end
+
+% No normalization step here (removed [B, meanB, stdB] = normalize(B, 2);)
+
+%% Step 3: Compute SVD for Dimensionality Reduction
+disp('Performing SVD to extract eigenfaces...');
+
+% SVD decomposition. Using 'econ' to save memory
+[U, S, V] = svd(B, 'econ');
+
+% Display and save top eigenfaces
+Eigenfaces = arrayfun(@(j) mat2gray(reshape(U(:, j), targetSize)), 1:16, 'UniformOutput', false);
+figure('Position', [100, 100, 1200, 600]);
+montage(Eigenfaces, 'Size', [4, 4], 'BorderSize', [5, 5], 'BackgroundColor', 'white');
+title('Top 16 Eigenfaces');
+saveas(gcf, 'eigenfaces.png');
+close all;
+
+%% Step 4: Feature Extraction
+% Project all images onto the first k eigenfaces
+disp('Extracting features using top k eigenfaces...');
+U_k = U(:, 1:k);
+W = S(1:k, 1:k) * V(:, 1:k)'; % W are the weights (features)
+X = W'; % Each row of X is a feature vector for one image
+Y = categorical(imds.Labels, persons);
+
+%% Step 5: Train Multi-Class SVM with Parallelization
+disp('Training multi-class SVM (fitcecoc) using parallel processing...');
+options = statset('UseParallel', true);
+Mdl = fitcecoc(X, Y, ...
+    'Verbose', 2, ...
+    'Learners', 'svm', ...
+    'Options', options);
+
+%% Step 6a: Visualization of Feature Space
+% Visualize top features
+disp('Visualizing feature space...');
+figure('Position', [100, 100, 1200, 600]);
+scatter3(X(:, 1), X(:, 2), X(:, 3), 50, double(Y), 'filled', 'MarkerFaceAlpha', 0.6);
+title('Feature Space: Top 3 Eigenface Features');
+xlabel('Feature 1'); ylabel('Feature 2'); zlabel('Feature 3');
+grid on;
+saveas(gcf, 'feature_space.png');
+close all;
+
+%% Step 6b: Model Evaluation - ROC Metrics and Confusion Matrix
+disp('Computing predictions and ROC metrics...');
+[YPred, Score] = resubPredict(Mdl);
+
+% Limit number of classes for visualization (e.g., 10)
+numClassesToShow = min(10, numel(persons));
+randomIdx = randperm(numel(persons), numClassesToShow);
+selectedClasses = persons(randomIdx);
+
+% Define subsetMask to include only selected classes
+subsetMask = ismember(Y, selectedClasses);
+
+% Extract classes present in the subsetMask for Y and YPred
+classesInG = unique(Y(subsetMask));
+classesInGHAT = unique(YPred(subsetMask));
+
+% Define subsetClasses as the union of classes present in G and GHAT
+subsetClasses = union(classesInG, classesInGHAT);
+
+% Check if 'subsetClasses' includes all necessary labels
+missingClasses = setdiff([classesInG; classesInGHAT], subsetClasses);
+if ~isempty(missingClasses)
+    warning('Some classes are missing from subsetClasses: %s', strjoin(string(missingClasses), ', '));
+end
+
+% Compute confusion matrix with specified order
+confMat = confusionmat(Y(subsetMask), YPred(subsetMask), 'Order', subsetClasses);
+
+% Verify that confusion matrix dimensions match subsetClasses
+if size(confMat, 1) ~= numel(subsetClasses) || size(confMat, 2) ~= numel(subsetClasses)
+    error('Confusion matrix dimensions do not match the number of subsetClasses.');
+end
+
+% Create confusion chart
+confChart = confusionchart(confMat, subsetClasses, ...
+    'Title', 'Confusion Matrix (Subset)', ...
+    'RowSummary', 'row-normalized', ...
+    'ColumnSummary', 'column-normalized');
+
+% Save confusion matrix figure
+saveas(gcf, 'confusion_matrix.png');
+close all;
+
+% Compute ROC metrics for selected classes
+figure('Position', [100, 100, 1200, 600]);
+hold on;
+for i = 1:numClassesToShow
+    currentClass = selectedClasses(i);
+    binaryLabel = (Y == currentClass);
+    
+    % Check if there are positive samples for the current class
+    if sum(binaryLabel) == 0
+        warning('No positive samples for class %s. Skipping ROC curve.', string(currentClass));
+        continue;
+    end
+    
+    [Xroc, Yroc, Troc, AUC] = perfcurve(binaryLabel, Score(:, i), true);
+    plot(Xroc, Yroc, 'LineWidth', 1.5, 'DisplayName', string(currentClass));
+    fprintf('AUC for %s: %.2f\n', string(currentClass), AUC);
+end
+hold off;
+xlabel('False Positive Rate');
+ylabel('True Positive Rate');
+title('ROC Curves for Selected Classes');
+legend('Location', 'southeastoutside');
+grid on;
+saveas(gcf, 'roc_metrics.png');
+close all;
+
+%% Step 7: Save the Model
+% Save the model in the specified format
+disp('Saving model and parameters...');
+fprintf('Number of people recognized: %d\n', numel(persons));
+save('model.mat', 'Mdl', 'persons', 'U_k', 'targetSize'); % Removed meanB and stdB
+disp('Model and outputs saved successfully.');

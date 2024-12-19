@@ -135,5 +135,6 @@ saveas(gcf, 'confusion_matrix.png');
 %% Step 7: Save the Model
 % Save the model in the specified format
 disp('Saving model and parameters...');
+fprintf('Number of people recognized: %d\n', numel(persons));
 save('model.mat', 'Mdl', 'persons', 'U_k', 'targetSize'); % Removed meanB and stdB
 disp('Model and outputs saved successfully.');

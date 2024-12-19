@@ -13,7 +13,7 @@
 % recognition:
 
 targetSize = [128,128];
-k=30;                                   % Number of features to consider
+k=60;                                   % Number of features to consider
 location = fullfile('lfw');
 
 disp('Creating image datastore...');
@@ -28,10 +28,12 @@ persons = {'Angelina_Jolie', 'Eduardo_Duhalde', 'Amelie_Mauresmo'}
 % Below you find code that picks people with at least 10 and not more
 % than 40 images
 %
-% tbl = countEachLabel(imds0);
-% mask = tbl{:,2}>=10 & tbl{:,2}<=40;
-% disp(['Number of images: ',num2str(sum(tbl{mask,2}))]);
-% persons = unique(tbl{mask,1});
+tbl = countEachLabel(imds0);
+mask = tbl{:,2}>=5 & tbl{:,2}<=60;
+disp(['Number of images: ',num2str(sum(tbl{mask,2}))]);
+persons = unique(tbl{mask,1});
+fprintf('Number of people recognized: %d\n', numel(persons));
+
 
 
 [lia, locb] = ismember(imds0.Labels, persons);
@@ -139,3 +141,5 @@ title(['Number of features: ' ,num2str(k)]);
 % Save the model and persons that the model recognizes.
 % NOTE: An important part of the submission.
 save('model','Mdl','persons','U', 'targetSize');
+
+disp('saved model.')
