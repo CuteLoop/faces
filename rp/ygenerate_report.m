@@ -24,11 +24,13 @@ rpt = Report('FacialRecognitionReport2', 'pdf');
 %% Add Title Page
 tp = TitlePage;
 tp.Title = 'Facial Recognition Using SVD, Eigenfaces, and SVM';
+tp.Subtitle = 'With HPC Integration a MATLAB generated report';
 tp.Author = 'Joel Maldonado';
 
 % Optional: Add an image to the title page
 % Ensure 'dataset_images.png' exists in the current directory or provide the correct path
-if isfile('dataset_images.png')
+if isfile('sam.png')
+    tp.Image = Image('sam.png');
     tp.Image.Width = '2in';
     tp.Image.Height = '2in';
 end
@@ -44,12 +46,17 @@ sec1 = Section('Data Exploration');
 para1 = Paragraph([ ...
     'The initial phase of our project involves exploring the dataset to understand its structure, ', ...
     'distribution, and inherent characteristics. This exploration is crucial for informed preprocessing ', ...
+    'and effective feature extraction.', ...
+    'The data set contains more than 13,000 images of faces collected from the web.
+     Each face has been labeled with the name of the person pictured. 1680']);
 add(sec1, para1);
 
 % Paragraph and Image: Histogram of Image Counts per Person
 para_hist = Paragraph([ ...
     'To assess the distribution of images per individual in the dataset, we generate a histogram. ', ...
+    'This visualization reveals the number of images each person has, ranging from people with 10 to 60 images. ', ...
     'Such an analysis helps in identifying data imbalance and determining the sufficiency of training ', ...
+    'samples for each class. For instance the person with the most images has 530 images. Failing to filter come of their images could lead to overfitting.']);
 add(sec1, para_hist);
 
 % Add the histogram image
@@ -90,6 +97,7 @@ end
 
 % Paragraph and Image: Image Collage of Different People
 para_collage = Paragraph([ ...
+    'To understand the overall variation within the dataset, we create a collage of images of ', ...
     'different individuals. This collage highlights differences in facial features, skin tones, and ', ...
     'image conditions, providing a comprehensive view of the dataset diversity.']);
 add(sec1, para_collage);
@@ -116,6 +124,7 @@ sec2 = Section('Singular Value Decomposition and Eigenfaces');
 
 % Paragraph introducing SVD
 para_svd = Paragraph([ ...
+    'Singular Value Decomposition (SVD) is a linear algebra technique that ', ...
     'factorizes a data matrix into three components: ']);
 add(sec2, para_svd);
 
@@ -140,6 +149,8 @@ add(sec2, eq2);
 para_eigenfaces = Paragraph([ ...
     'By retaining only the top k singular values and their corresponding vectors, we reduce the dimensionality ', ...
     'while preserving the most significant information. The columns of U corresponding to the top k singular values ', ...
+    'are known as eigenfaces. These eigenfaces are essentially the principal components of the face space,¿. ', ...
+    'Hopefully they capture features like facial contours, eyes, noses, and mouth positions that best explain the variance in the dataset.']);
 add(sec2, para_eigenfaces);
 
 % Add eigenfaces image
@@ -179,6 +190,8 @@ add(sec3, para_svm);
 
 % Paragraph summarizing the pipeline
 para_pipeline = Paragraph([ ...
+    'The result is a facial recognition pipeline: Raw images to Preprocessing  to SVD (for eigenfaces)  to ', ...
+    'Feature Extraction (projecting onto eigenfaces)  to SVM Classification.']);
 add(sec3, para_pipeline);
 
 % Add feature space visualization image
@@ -203,6 +216,7 @@ sec4 = Section('Discussion of Other Approaches and State of the Art');
 
 % Paragraph introducing the section
 para_discussion = Paragraph([ ...
+    'While Singular Value Decomposition (SVD) and Support Vector Machines (SVM) provide a framework ', ...
     'for facial recognition, numerous other methodologies exist in the literature. This section explores ', ...
     'alternative techniques and compares their advantages and limitations.']);
 add(sec4, para_discussion);
@@ -330,8 +344,60 @@ para_conclusion = Paragraph([ ...
     'By integrating MATLAB’s parallel computing capabilities, we ensure that the approach scales well, handling larger datasets efficiently.']);
 add(sec6, para_conclusion);
 
+
+% sam.png image
+if isfile('sam.png')
+    img_roc = Image('sam.png');
+    img_roc.Width = '6in';
+    img_roc.Height = '4.5in';
+    add(sec5, img_roc);
+    
+    % Add caption
+    cap_roc = Paragraph('Figure 8:Image segmentation with MATLAB’s 2024b imsegsam function.');
+    add(sec5, cap_roc);
+else
+    warning('Image file "sam.png" not found.');
+end
+
+
 para_future = Paragraph([ ...
+    'Future work could explore advanced feature extraction methods. One approach explored was to segment faces before calculating the SVD with matlab imsegsam function. ', ...
+    'Unfortunately this function comes with MATLAB’s 2024b which is not available at the moment at the HPC. ', ...
+    'Hence we tried to immplemnt our costume image segmentation function by bounding a face in a box. Then locate features like eyes, mouth, nose to approximate the scaling factor of the face. ', ...
+    'This is followed by a resize of the box to fit the face and a skin color mask reported by literature to segment skin. ', ...
+    'This approach is expected to improve recognition accuracy by focusing on facial features and reducing noise from the background.']);
 add(sec6, para_future);
+
+% bbox.png image
+if isfile('bbox.png')
+    img_roc = Image('bbox.png');
+    img_roc.Width = '6in';
+    img_roc.Height = '4.5in';
+    add(sec5, img_roc);
+    
+    % Add caption
+    cap_roc = Paragraph('Figure 8: Image of bounding box surrounding a face.');
+    add(sec5, cap_roc);
+else
+    warning('Image file "bbox.png" not found.');
+end
+
+% seg_mask.png image
+if isfile('seg_mask.png')
+    img_roc = Image('seg_mask.png');
+    img_roc.Width = '6in';
+    img_roc.Height = '4.5in';
+    add(sec5, img_roc);
+    
+    % Add caption
+    cap_roc = Paragraph('Figure 9 : Image of applying the skincolor mask to segment the image inside the bounding boxs.');
+    add(sec5, cap_roc);
+else
+    warning('Image file "seg_mask.png" not found.');
+end
+
+
+
 
 para_additional = Paragraph([ ...
     'Additionally, expanding the dataset to include more diverse subjects and varying image conditions can enhance the system''s robustness and generalizability. ', ...
