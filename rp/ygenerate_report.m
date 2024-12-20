@@ -15,7 +15,7 @@ import mlreportgen.report.*
 import mlreportgen.dom.*
 
 % Create a new report
-rpt = Report('FacialRecognitionReport2', 'pdf');
+rpt = Report('FacialRecognitionReport3', 'pdf');
 
 %% Add Title Page
 tp = TitlePage;
