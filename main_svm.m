@@ -22,12 +22,43 @@ imds0 = imageDatastore(location,'IncludeSubfolders',true,'LabelSource','folderna
                       'ReadFcn', @(filename)imresize(im2gray(imread(filename)),targetSize));
 
 disp('Creating subset of 2 persons...');
+
+
+% Define persons manually
 person1 = 'Angelina_Jolie';
 person2 = 'Eduardo_Duhalde';
+person3 = 'Abdullah_Gul';
+person4 = 'Adrien_Brody';
+person5 = 'Al_Gore';
+person6 = 'Al_Sharpton';
+person7 = 'Albert_Costa';
+person8 = 'Alejandro_Toledo';
+person9 = 'Ali_Naimi';
+person10 = 'Alvaro_Uribe';
+person11 = 'Amelia_Vega';
+person12 = 'Amelie_Mauresmo';
 
-mask0_1 = imds0.Labels==person1;
-mask0_2 = imds0.Labels==person2;
-mask0  = mask0_1|mask0_2;
+% Create masks for each person
+mask1 = imds0.Labels == person1;
+mask2 = imds0.Labels == person2;
+mask3 = imds0.Labels == person3;
+mask4 = imds0.Labels == person4;
+mask5 = imds0.Labels == person5;
+mask6 = imds0.Labels == person6;
+mask7 = imds0.Labels == person7;
+mask8 = imds0.Labels == person8;
+mask9 = imds0.Labels == person9;
+mask10 = imds0.Labels == person10;
+mask11 = imds0.Labels == person11;
+mask12 = imds0.Labels == person12;
+
+% Combine masks to create a unified subset mask
+mask0 = mask1 | mask2 | mask3 | mask4 | mask5 | ...
+             mask6 | mask7 | mask8 | mask9 | mask10 | ...
+             mask11 | mask12;
+
+
+
 idx0 = find(mask0);
 
 imds = subset(imds0, idx0);

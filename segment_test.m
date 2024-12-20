@@ -6,5 +6,5 @@ while hasdata(imds)
     [faceMask, maskedImage] = segment_faces(I); % Segment the face
     imshow(maskedImage, []);
     title('Face Segmentation with Landmarks');
-    pause(2); % Pause to view results
+    pause(5); % Pause to view results
 end

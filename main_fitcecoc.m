@@ -21,7 +21,7 @@ imds0 = imageDatastore(location,'IncludeSubfolders',true,'LabelSource','folderna
                       'ReadFcn', @(filename)imresize(im2gray(imread(filename)),targetSize));
 
 disp('Creating subset of several persons...');
-persons = {'Angelina_Jolie', 'Eduardo_Duhalde', 'Amelie_Mauresmo'}
+%persons = {'Angelina_Jolie', 'Eduardo_Duhalde', 'Amelie_Mauresmo'}
 
 
 % NOTE: Alternatively, you could pick people based on some criteria
