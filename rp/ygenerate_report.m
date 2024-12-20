@@ -1,3 +1,4 @@
+
 %----------------------------------------------------------------
 % File:     ygenerate_report.m
 % Purpose:  Load dataset, preprocess images, compute SVD (eigenfaces),
@@ -24,10 +25,15 @@ tp.Subtitle = 'With HPC Integration – A MATLAB Generated Report';
 tp.Author = 'Joel Maldonado';
 
 % Optional: Add an image to the title page if available
-if isfile('sam.png')
-    tp.Image = Image('sam.png');
-    tp.Image.Width = '2in';
-    tp.Image.Height = '2in';
+if isfile('bbox.png')
+    tpImage = Image('bbox.png');
+    tpImage.Width = '4in';
+    tpImage.Height = '4in';
+    % Center the image
+    tpImgPara = Paragraph();
+    tpImgPara.Style = {HAlign('center')};
+    append(tpImgPara, tpImage);
+    tp.Image = tpImgPara;  % TitlePage supports directly setting tp.Image, but we want a paragraph
 end
 add(rpt, tp);
 
@@ -55,8 +61,13 @@ if isfile('image_counts_histogram.png')
     img_hist = Image('image_counts_histogram.png');
     img_hist.Width = '4.5in';
     img_hist.Height = '3in';
-    add(sec1, img_hist);
+    img_hist_para = Paragraph();
+    img_hist_para.Style = {HAlign('center')};
+    append(img_hist_para, img_hist);
+    add(sec1, img_hist_para);
+
     cap_hist = Paragraph('Figure 1: Histogram showing the distribution of image counts per person.');
+    cap_hist.Style = {HAlign('center')};
     add(sec1, cap_hist);
 else
     warning('image_counts_histogram.png not found.');
@@ -72,8 +83,13 @@ if isfile('angelina_jolie_collage.png')
     img_angela = Image('angelina_jolie_collage.png');
     img_angela.Width = '4.5in';
     img_angela.Height = '3in';
-    add(sec1, img_angela);
+    img_angela_para = Paragraph();
+    img_angela_para.Style = {HAlign('center')};
+    append(img_angela_para, img_angela);
+    add(sec1, img_angela_para);
+
     cap_angela = Paragraph('Figure 2: Image collage of Angelina Jolie.');
+    cap_angela.Style = {HAlign('center')};
     add(sec1, cap_angela);
 else
     warning('angelina_jolie_collage.png not found.');
@@ -87,10 +103,15 @@ add(sec1, para_collage);
 
 if isfile('dataset_images.png')
     img_dataset = Image('dataset_images.png');
-    img_dataset.Width = '4.5in';
-    img_dataset.Height = '3in';
-    add(sec1, img_dataset);
+    img_dataset.Width = '8in';
+    img_dataset.Height = '8in';
+    img_dataset_para = Paragraph();
+    img_dataset_para.Style = {HAlign('center')};
+    append(img_dataset_para, img_dataset);
+    add(sec1, img_dataset_para);
+
     cap_dataset = Paragraph('Figure 3: Montage of different individuals, illustrating dataset diversity.');
+    cap_dataset.Style = {HAlign('center')};
     add(sec1, cap_dataset);
 else
     warning('dataset_images.png not found.');
@@ -128,8 +149,13 @@ if isfile('eigenfaces.png')
     img_eigen = Image('eigenfaces.png');
     img_eigen.Width = '5in';
     img_eigen.Height = '3.5in';
-    add(sec2, img_eigen);
+    img_eigen_para = Paragraph();
+    img_eigen_para.Style = {HAlign('center')};
+    append(img_eigen_para, img_eigen);
+    add(sec2, img_eigen_para);
+
     cap_eigen = Paragraph('Figure 4: Top 16 extracted eigenfaces.');
+    cap_eigen.Style = {HAlign('center')};
     add(sec2, cap_eigen);
 else
     warning('eigenfaces.png not found.');
@@ -155,8 +181,13 @@ if isfile('feature_space.png')
     img_feat = Image('feature_space.png');
     img_feat.Width = '5in';
     img_feat.Height = '3.5in';
-    add(sec3, img_feat);
+    img_feat_para = Paragraph();
+    img_feat_para.Style = {HAlign('center')};
+    append(img_feat_para, img_feat);
+    add(sec3, img_feat_para);
+
     cap_feat = Paragraph('Figure 5: Visualization of the top 3 eigenface-based features.');
+    cap_feat.Style = {HAlign('center')};
     add(sec3, cap_feat);
 else
     warning('feature_space.png not found.');
@@ -194,10 +225,15 @@ add(sec5, para_results);
 
 if isfile('confusion_matrix.png')
     img_conf = Image('confusion_matrix.png');
-    img_conf.Width = '5in';
-    img_conf.Height = '3.5in';
-    add(sec5, img_conf);
+    img_conf.Width = '8in';
+    img_conf.Height = '8in';
+    img_conf_para = Paragraph();
+    img_conf_para.Style = {HAlign('center')};
+    append(img_conf_para, img_conf);
+    add(sec5, img_conf_para);
+
     cap_conf = Paragraph('Figure 6: Confusion Matrix for a subset of classes.');
+    cap_conf.Style = {HAlign('center')};
     add(sec5, cap_conf);
 else
     warning('confusion_matrix.png not found.');
@@ -209,10 +245,15 @@ add(sec5, para_roc);
 
 if isfile('roc_metrics.png')
     img_roc = Image('roc_metrics.png');
-    img_roc.Width = '5in';
-    img_roc.Height = '3.5in';
-    add(sec5, img_roc);
+    img_roc.Width = '8in';
+    img_roc.Height = '5.5in';
+    img_roc_para = Paragraph();
+    img_roc_para.Style = {HAlign('center')};
+    append(img_roc_para, img_roc);
+    add(sec5, img_roc_para);
+
     cap_roc = Paragraph('Figure 7: ROC Curve for selected classes.');
+    cap_roc.Style = {HAlign('center')};
     add(sec5, cap_roc);
 else
     warning('roc_metrics.png not found.');
@@ -234,12 +275,17 @@ para_future = Paragraph([ ...
 add(sec6, para_future);
 
 % Add sam.png image (if available)
-if isfile('sam.png')
-    img_sam = Image('sam.png');
-    img_sam.Width = '4.5in';
-    img_sam.Height = '3in';
-    add(sec6, img_sam);
+if isfile('sam.png.jpg')
+    img_sam = Image('sam.png.jpg');
+    img_sam.Width = '3.5in';
+    img_sam.Height = '2.7in';
+    img_sam_para = Paragraph();
+    img_sam_para.Style = {HAlign('center')};
+    append(img_sam_para, img_sam);
+    add(sec6, img_sam_para);
+
     cap_sam = Paragraph('Figure 8: Attempted segmentation using "imsegsam" (MATLAB 2024b).');
+    cap_sam.Style = {HAlign('center')};
     add(sec6, cap_sam);
 else
     warning('sam.png not found.');
@@ -250,8 +296,13 @@ if isfile('bbox.png')
     img_bbox = Image('bbox.png');
     img_bbox.Width = '4.5in';
     img_bbox.Height = '3in';
-    add(sec6, img_bbox);
+    img_bbox_para = Paragraph();
+    img_bbox_para.Style = {HAlign('center')};
+    append(img_bbox_para, img_bbox);
+    add(sec6, img_bbox_para);
+
     cap_bbox = Paragraph('Figure 9: Bounding box around a detected face.');
+    cap_bbox.Style = {HAlign('center')};
     add(sec6, cap_bbox);
 else
     warning('bbox.png not found.');
@@ -262,8 +313,13 @@ if isfile('seg_mask.png')
     img_seg = Image('seg_mask.png');
     img_seg.Width = '4.5in';
     img_seg.Height = '3in';
-    add(sec6, img_seg);
+    img_seg_para = Paragraph();
+    img_seg_para.Style = {HAlign('center')};
+    append(img_seg_para, img_seg);
+    add(sec6, img_seg_para);
+
     cap_seg = Paragraph('Figure 10: Applying a skin-color mask to segment the face region.');
+    cap_seg.Style = {HAlign('center')};
     add(sec6, cap_seg);
 else
     warning('seg_mask.png not found.');

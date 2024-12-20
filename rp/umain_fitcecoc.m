@@ -128,8 +128,8 @@ subsetClasses = selectedClasses(1:min(5, numClassesToShow));
 subsetMask = ismember(Y, subsetClasses);
 figure('Position', [100, 100, 1200, 600]);
 confusionchart(Y(subsetMask), YPred(subsetMask), ...
-    'Title', 'Confusion Matrix (Subset)', ...
-    'FontSize', 10, 'RowSummary', 'row-normalized', 'ColumnSummary', 'column-normalized');
+    'Title', 'Confusion Matrix', ...
+    'FontSize', 2);
 saveas(gcf, 'confusion_matrix.png');
 
 %% Step 7: Save the Model
